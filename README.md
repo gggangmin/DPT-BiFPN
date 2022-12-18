@@ -4,7 +4,7 @@
 
 This project reproduces the Dense prediction transformer based on paper and proposes ideas to improve it.
 
-<p align="center"><img src = "DPT-BiFPN.PNG"></p>
+<p align="center"><img src="./DPT-BiFPN.PNG"></p>
 
 DPT is used as a backbone for the dense prediction task to produce an improved global reactive feature. For dense prediction task, FPN mixes the features of several levels produced based on it. This project proposes to effectively mix the features of DPT through BiFPN to perform the dense prediction task.
 
