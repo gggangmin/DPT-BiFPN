@@ -70,6 +70,10 @@ class FocusOnDepth(nn.Module):
         self.reassembles = nn.ModuleList(self.reassembles)
         self.fusions = nn.ModuleList(self.fusions)
 
+        #BiFPN init해주기
+        #reassemble_s=[4,8,16,32]
+        self.bifpn =BiFPN([reassemble_s])
+
         #Head
         if type == "full":
             self.head_depth = HeadDepth(resample_dim)
@@ -99,13 +103,14 @@ class FocusOnDepth(nn.Module):
             reassemble_list.append(reassemble_result)
         
         #bifpn
-        # p3,p4,p5,p6
-        fusion_list = BiFPN(reassemble_list)
+        # reassamble layer 역순으로 들어있음(32,16,8,4)
+        fusion_list = self.bifpn(reassemble_list)
+
         previous_stage = None
-        for i in range(len(fusion_list)-1,-1,-1):    
+        for i in range(len(fusion_list)):    
             fusion_result = self.fusions[i](fusion_list[i], previous_stage)
             previous_stage = fusion_result
-            p_list.append(fusion_result)
+            #p_list.append(fusion_result)
         
         out_depth = None
         out_segmentation = None

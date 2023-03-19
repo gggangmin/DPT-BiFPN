@@ -54,12 +54,10 @@ class BiFPNBlock(nn.Module):
         self.p3_td = DepthwiseConvBlock(feature_size, feature_size)
         self.p4_td = DepthwiseConvBlock(feature_size, feature_size)
         self.p5_td = DepthwiseConvBlock(feature_size, feature_size)
-        self.p6_td = DepthwiseConvBlock(feature_size, feature_size)
         
         self.p4_out = DepthwiseConvBlock(feature_size, feature_size)
         self.p5_out = DepthwiseConvBlock(feature_size, feature_size)
         self.p6_out = DepthwiseConvBlock(feature_size, feature_size)
-        self.p7_out = DepthwiseConvBlock(feature_size, feature_size)
         
         # TODO: Init weights
         self.w1 = nn.Parameter(torch.Tensor(2, 4))
@@ -77,14 +75,8 @@ class BiFPNBlock(nn.Module):
         w2 /= torch.sum(w2, dim=0) + self.epsilon
         
         p6_td = p6_x   
-        # print("p6_td : ", p6_td.shape)
-        # print("p5_x : ", p5_x.shape)
         p5_td = self.p5_td(w1[0, 0] * p5_x + w1[1, 0] * F.interpolate(p6_td, scale_factor=2))
-        # print("p5_td : ", p5_td.shape)
-        # print("p4_x : ", p4_x.shape)
         p4_td = self.p4_td(w1[0, 1] * p4_x + w1[1, 1] * F.interpolate(p5_td, scale_factor=2))
-        # print("p4_td : ", p4_td.shape)
-        # print("p3_x : ", p3_x.shape)
         p3_td = self.p3_td(w1[0, 2] * p3_x + w1[1, 2] * F.interpolate(p4_td, scale_factor=2))
         
         # Calculate Bottom-Up Pathway
@@ -96,18 +88,15 @@ class BiFPNBlock(nn.Module):
         return [p3_out, p4_out, p5_out, p6_out]
     
 class BiFPN(nn.Module):
-    def __init__(self, size, feature_size=64, num_layers=2, epsilon=0.0001):
+    def __init__(self, size, feature_size=64, num_layers=3, epsilon=0.0001):
+        # num_layers = BIFPN block 수
         super(BiFPN, self).__init__()
+        # size = 4,8,16,32
         self.p3 = nn.Conv2d(size[0], feature_size, kernel_size=1, stride=1, padding=0)
         self.p4 = nn.Conv2d(size[1], feature_size, kernel_size=1, stride=1, padding=0)
         self.p5 = nn.Conv2d(size[2], feature_size, kernel_size=1, stride=1, padding=0)
+        self.p6 = nn.Conv2d(size[3], feature_size, kernel_size=1, stride=1, padding=0)
         
-        # p6 is obtained via a 3x3 stride-2 conv on C5
-        self.p6 = nn.Conv2d(size[2], feature_size, kernel_size=3, stride=2, padding=1)
-        
-        # p7 is computed by applying ReLU followed by a 3x3 stride-2 conv on p6
-        self.p7 = ConvBlock(feature_size, feature_size, kernel_size=3, stride=2, padding=1)
-
         bifpns = []
         for _ in range(num_layers):
             bifpns.append(BiFPNBlock(feature_size))
