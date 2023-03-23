@@ -88,7 +88,7 @@ class BiFPNBlock(nn.Module):
         return [p3_out, p4_out, p5_out, p6_out]
     
 class BiFPN(nn.Module):
-    def __init__(self, size, feature_size=64, num_layers=3, epsilon=0.0001):
+    def __init__(self, size, feature_size=256, num_layers=3, epsilon=0.0001):
         # num_layers = BIFPN block 수
         super(BiFPN, self).__init__()
         # size = 4,8,16,32
@@ -105,6 +105,12 @@ class BiFPN(nn.Module):
     def forward(self, inputs):
         c6, c5, c4, c3 = inputs
         # 순서대로 reassemble 32, 16, 8, 4
+        '''
+        torch.Size([1, 256, 12, 12])
+        torch.Size([1, 256, 24, 24])
+        torch.Size([1, 256, 48, 48])
+        torch.Size([1, 256, 96, 96])
+        '''
         
         # Calculate the input column of BiFPN
         p3_x = self.p3(c3) 
