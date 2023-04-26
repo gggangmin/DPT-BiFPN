@@ -2,6 +2,7 @@ import os
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
+import json
 import cv2
 from torchvision import transforms
 from scipy.ndimage.filters import gaussian_filter
@@ -54,19 +55,22 @@ class Predictor(object):
 
                 tensor_im = self.transform_image(pil_im).unsqueeze(0)
                 output_depth, output_segmentation = self.model(tensor_im)
-                output_depth = 1-output_depth
 
-                #output_segmentation = transforms.ToPILImage()(output_segmentation.squeeze(0).argmax(dim=0).float()).resize(original_size, resample=Image.NEAREST)
-                output_depth = transforms.ToPILImage()(output_depth.squeeze(0).float()).resize(original_size, resample=Image.BICUBIC)
-
-                #path_dir_segmentation = os.path.join(self.output_dir, 'segmentations')
-                #path_dir_depths = os.path.join(self.output_dir, 'depths')
-                #create_dir(path_dir_segmentation)
-                #output_segmentation.save(os.path.join(path_dir_segmentation, os.path.basename(images)))
-
-                path_dir_depths = os.path.join(self.output_dir, 'depths')
-                create_dir(path_dir_depths)
-                output_depth.save(os.path.join(path_dir_depths, os.path.basename(images)))
+                with open('config.json', 'r') as f:
+                    config = json.load(f)
+                mode = config['General']['type']
+                if mode != 'depth':
+                    output_segmentation = transforms.ToPILImage()(output_segmentation.squeeze(0).argmax(dim=0).float()).resize(original_size, resample=Image.NEAREST)
+                    path_dir_segmentation = os.path.join(self.output_dir, 'segmentations')
+                    create_dir(path_dir_segmentation)
+                    output_segmentation.save(os.path.join(path_dir_segmentation, os.path.basename(images)))
+                
+                if mode != 'segmentation':
+                    output_depth = 1-output_depth
+                    output_depth = transforms.ToPILImage()(output_depth.squeeze(0).float()).resize(original_size, resample=Image.BICUBIC)
+                    path_dir_depths = os.path.join(self.output_dir, 'depths')
+                    create_dir(path_dir_depths)
+                    output_depth.save(os.path.join(path_dir_depths, os.path.basename(images)))
 
                 ## TO DO: Apply AutoFocus
 

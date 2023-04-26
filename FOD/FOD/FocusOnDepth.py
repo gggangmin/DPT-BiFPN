@@ -9,8 +9,11 @@ from FOD.Reassemble import Reassemble
 from FOD.Fusion import Fusion
 from FOD.Head import HeadDepth, HeadSeg
 from FOD.BiFPN import BiFPN
-
+import json
 torch.manual_seed(0)
+with open('config.json', 'r') as f:
+    config = json.load(f)
+mode = config['General']['type']
 
 class FocusOnDepth(nn.Module):
     def __init__(self,
@@ -24,7 +27,7 @@ class FocusOnDepth(nn.Module):
                  reassemble_s       = [4, 8, 16, 32],
                  transformer_dropout= 0,
                  nclasses           = 2,
-                 type               = "full",
+                 type               = mode,
                  model_timm         = "vit_large_patch16_384"):
         """
         Focus on Depth
@@ -104,6 +107,7 @@ class FocusOnDepth(nn.Module):
         
         #bifpn
         # reassamble layer 역순으로 들어있음(32,16,8,4)
+        
         fusion_list = self.bifpn(reassemble_list)
 
 
