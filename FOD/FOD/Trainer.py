@@ -31,6 +31,8 @@ class Trainer(object):
                     model_timm  =   config['General']['model_timm'],
                     type        =   self.type,
                     patch_size  =   config['General']['patch_size'],
+                    bifpn       =   config['General']['bifpn'],
+                    fapn        =   config['General']['fapn']
         )
 
         self.model.to(self.device)
@@ -61,18 +63,20 @@ class Trainer(object):
             for i, (X, Y_depths, Y_segmentations) in enumerate(pbar):
                 # get the inputs; data is a list of [inputs, labels]
                 X, Y_depths, Y_segmentations = X.to(self.device), Y_depths.to(self.device), Y_segmentations.to(self.device)
-                # zero the parameter gradients
-                self.optimizer_backbone.zero_grad()
-                self.optimizer_scratch.zero_grad()
-                # forward + backward + optimizer
-                output_depths, output_segmentations = self.model(X)
-                output_depths = output_depths.squeeze(1) if output_depths != None else None
+                # 오류탐지
+                with torch.autograd.set_detect_anomaly(True):
+                    # zero the parameter gradients
+                    self.optimizer_backbone.zero_grad()
+                    self.optimizer_scratch.zero_grad()
+                    # forward + backward + optimizer
+                    output_depths, output_segmentations = self.model(X)
+                    output_depths = output_depths.squeeze(1) if output_depths != None else None
 
-                Y_depths = Y_depths.squeeze(1) #1xHxW -> HxW
-                Y_segmentations = Y_segmentations.squeeze(1) #1xHxW -> HxW
-                # get loss
-                loss = self.loss_depth(output_depths, Y_depths) + self.loss_segmentation(output_segmentations, Y_segmentations)
-                loss.backward()
+                    Y_depths = Y_depths.squeeze(1) #1xHxW -> HxW
+                    Y_segmentations = Y_segmentations.squeeze(1) #1xHxW -> HxW
+                    # get loss
+                    loss = self.loss_depth(output_depths, Y_depths) + self.loss_segmentation(output_segmentations, Y_segmentations)
+                    loss.backward()
                 # step optimizer
                 self.optimizer_scratch.step()
                 self.optimizer_backbone.step()

@@ -1,7 +1,7 @@
 {
     "General":{
-        "device":"cuda:1",
-        "type":"depth",
+        "device":"cuda:0",
+        "type":"segmentation",
         "model_timm":"vit_base_patch16_384",
         "emb_dim":768,
         "hooks":[2, 5, 8, 11],
@@ -13,17 +13,20 @@
         "loss_depth":"ssi",
         "loss_segmentation":"ce",
         "momentum":0.9,
-        "epochs":60,
+        "epochs":20,
         "batch_size":1,
         "path_model":"models",
         "path_predicted_images":"output",
         "seed":0,
-        "patch_size":16
+        "patch_size":16,
+        "bifpn":1,
+        "fapn":0
     },
     "Dataset":{
         "paths":{
             "path_dataset":"./datasets",
-            "list_datasets":[ "nyuv2"],
+            "list_datasets":["inria", "nyuv2", "posetrack"],
+            "list_datasets_origin":["inria", "nyuv2", "posetrack"],
             "path_images":"images",
             "path_segmentations":"segmentations",
             "path_depths":"depths"

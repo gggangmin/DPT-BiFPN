@@ -50,9 +50,18 @@ class MyConvTranspose2d(nn.Module):
 class Resample(nn.Module):
     def __init__(self, p, s, h, emb_dim, resample_dim):
         super(Resample, self).__init__()
-        assert (s in [4, 8, 16, 32]), "s must be in [0.5, 4, 8, 16, 32]"
+        assert (s in [2, 4, 8, 16, 32]), "s must be in [0.5, 4, 8, 16, 32]"
         self.conv1 = nn.Conv2d(emb_dim, resample_dim, kernel_size=1, stride=1, padding=0)
-        if s == 4:
+        if s == 2:
+            self.conv2 = nn.ConvTranspose2d(resample_dim,
+                                resample_dim,
+                                kernel_size=8,
+                                stride=8,
+                                padding=0,
+                                bias=True,
+                                dilation=1,
+                                groups=1)
+        elif s == 4:
             self.conv2 = nn.ConvTranspose2d(resample_dim,
                                 resample_dim,
                                 kernel_size=4,
@@ -72,7 +81,7 @@ class Resample(nn.Module):
                                 groups=1)
         elif s == 16:
             self.conv2 = nn.Identity()
-        else:
+        elif s == 32:
             self.conv2 = nn.Conv2d(resample_dim, resample_dim, kernel_size=2,stride=2, padding=0, bias=True)
 
     def forward(self, x):

@@ -33,6 +33,8 @@ class Predictor(object):
                     model_timm  =   config['General']['model_timm'],
                     type        =   self.type,
                     patch_size  =   config['General']['patch_size'],
+                    bifpn       =   config['General']['bifpn'],
+                    fapn        =   config['General']['fapn']
         )
         path_model = os.path.join(config['General']['path_model'], 'FocusOnDepth_{}.p'.format(config['General']['model_timm']))
         self.model.load_state_dict(

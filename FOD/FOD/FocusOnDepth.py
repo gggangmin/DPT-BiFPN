@@ -9,6 +9,7 @@ from FOD.Reassemble import Reassemble
 from FOD.Fusion import Fusion
 from FOD.Head import HeadDepth, HeadSeg
 from FOD.BiFPN import BiFPN
+from FOD.fapn import *
 import json
 torch.manual_seed(0)
 with open('config.json', 'r') as f:
@@ -24,11 +25,13 @@ class FocusOnDepth(nn.Module):
                  read               = 'projection',
                  num_layers_encoder = 24,
                  hooks              = [5, 11, 17, 23],
-                 reassemble_s       = [4, 8, 16, 32],
+                 reassemble_s       = [2, 4, 8, 16],
                  transformer_dropout= 0,
                  nclasses           = 2,
                  type               = mode,
-                 model_timm         = "vit_large_patch16_384"):
+                 model_timm         = "vit_large_patch16_384",
+                 bifpn              = 1,
+                 fapn               = 0):
         """
         Focus on Depth
         type : {"full", "depth", "segmentation"}
@@ -58,6 +61,8 @@ class FocusOnDepth(nn.Module):
         # self.transformer_encoders = nn.TransformerEncoder(encoder_layer, num_layers=num_layers_encoder)
         self.transformer_encoders = timm.create_model(model_timm, pretrained=True)
         self.type_ = type
+        self.fapn = fapn
+        self.bifpn = bifpn
 
         #Register hooks
         self.activation = {}
@@ -73,9 +78,11 @@ class FocusOnDepth(nn.Module):
         self.reassembles = nn.ModuleList(self.reassembles)
         self.fusions = nn.ModuleList(self.fusions)
 
+        if self.fapn==1: self.fapn_head = FaPNHead([256,256,256,256], 256)
         #BiFPN init해주기
         #reassemble_s=[4,8,16,32]
-        self.bifpn =BiFPN([256,256,256,256])
+        if self.bifpn==1:
+            self.bifpn_head =BiFPN([256,256,256,256])
 
         #Head
         if type == "full":
@@ -97,25 +104,25 @@ class FocusOnDepth(nn.Module):
         # t = self.transformer_encoders(x)
         t = self.transformer_encoders(img)
         reassemble_list =[]
-        for i in np.arange(len(self.fusions)-1, -1, -1):
+        previous_stage=None
+        len_fusion = len(self.fusions)
+        
+        
+        for i in np.arange(0,len_fusion):
             hook_to_take = 't'+str(self.hooks[i])
-            # hook -> transformer layer [2,5,8,11]
             activation_result = self.activation[hook_to_take]
-            #### reassemble 이전의 모양확인하기
             reassemble_result = self.reassembles[i](activation_result)
             reassemble_list.append(reassemble_result)
-        
-        #bifpn
-        # reassamble layer 역순으로 들어있음(32,16,8,4)
-        
-        fusion_list = self.bifpn(reassemble_list)
 
+        if self.bifpn==1:
+            reassemble_list = self.bifpn_head(reassemble_list)
 
-        previous_stage = None
-        for i in range(len(fusion_list)-1,-1,-1):    
-            fusion_result = self.fusions[i](fusion_list[i], previous_stage)
-            previous_stage = fusion_result
-            #p_list.append(fusion_result)
+        if self.fapn==1:
+            previous_stage= self.fapn_head(reassemble_list)
+        else:
+            for i in np.arange(len_fusion-1,-1,-1):
+                fusion_result = self.fusions[i](reassemble_list[i], previous_stage)
+                previous_stage = fusion_result
         
         out_depth = None
         out_segmentation = None

@@ -84,7 +84,12 @@ def get_optimizer(config, net):
     params_scratch = list()
     for name in names:
         params_scratch += list(eval("net."+name).parameters())
-
+    '''
+    [system_log] fusions torch.Size([256, 256, 3, 3])
+    [system_log] bifpn torch.Size([256, 256, 1, 1])
+    [system_log] head_depth torch.Size([128, 256, 3, 3])
+    [system_log] reassembles torch.Size([768, 1536])
+    '''
     if config['General']['optim'] == 'adam':
         optimizer_backbone = optim.Adam(params_backbone, lr=config['General']['lr_backbone'])
         optimizer_scratch = optim.Adam(params_scratch, lr=config['General']['lr_scratch'])

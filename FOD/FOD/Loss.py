@@ -3,6 +3,10 @@ import torch.nn as nn
 
 def compute_scale_and_shift(prediction, target, mask):
     # system matrix: A = [[a_00, a_01], [a_10, a_11]]
+    #print('#########system_check##########')
+    #print(torch.isnan(prediction).any())
+    #print(torch.isnan(target).any())
+    #print(torch.isnan(mask).any())
     a_00 = torch.sum(mask * prediction * prediction, (1, 2))
     a_01 = torch.sum(mask * prediction, (1, 2))
     a_11 = torch.sum(mask, (1, 2))
@@ -123,6 +127,9 @@ class ScaleAndShiftInvariantLoss(nn.Module):
         self.__prediction_ssi = None
 
     def forward(self, prediction, target):
+        # prediction 값의 nan을 처리하기 위한 연산
+        #prediction = torch.nan_to_num(prediction)
+        
         #preprocessing
         mask = target > 0
 
